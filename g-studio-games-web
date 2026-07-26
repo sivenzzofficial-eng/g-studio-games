@@ -160,7 +160,7 @@
     <div id="floating-confirm">
         <button class="btn-qty" onclick="changeQty(-1)">-</button>
         <button class="btn-buy-confirm" onclick="processExchange()">Beli (<span id="qty-display">1</span>)</button>
-        <button class="btn-qty" onclick="changeQty(1)">+</button>
+        <button class="btn-qty" onclick="changeQty(+1)">+</button>
     </div>
 
     <!-- MODAL REDEEM CODE -->
@@ -277,7 +277,7 @@
 
         let bannerData = [
             "https://via.placeholder.com/600x250/161b22/58a6ff?text=G-STORE+PROMO",
-            "https://via.placeholder.com/600x250/0d1117/da3633?text=BOSS+SURVIVAL+UPDATE",
+            "https://files.catbox.moe/a4dysc.png",
             "https://via.placeholder.com/600x250/1a1d20/238636?text=KUMPULIN+KOIN+G"
         ];
 
