@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G-STUDIO - Portal Game</title>
+    <style>
+        /* === GLOBAL STYLES === */
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; touch-action: manipulation; }
+        body { margin: 0; background-color: #f8f9fa; color: #212529; overflow: hidden; }
+
+        .g-coin { display: inline-flex; justify-content: center; align-items: center; width: 24px; height: 24px; background: gold; border-radius: 50%; color: #b8860b; font-weight: 900; border: 2px solid #daa520; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); margin: 0 5px; }
+
+        /* === TOP NAVIGATION === */
+        .top-nav { position: fixed; top: 0; left: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; background: rgba(248,249,250,0.9); backdrop-filter: blur(5px); border-bottom: 1px solid #dee2e6; }
+        .hamburger { cursor: pointer; }
+        .hamburger div { width: 25px; height: 3px; background: #333; margin: 5px 0; border-radius: 2px; }
+        .coin-display { display: flex; align-items: center; font-weight: bold; font-size: 1.1rem; color: #212529; background: #fff; padding: 5px 12px; border-radius: 20px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* === SIDEBAR (Hamburger Menu) === */
+        #sidebar { position: fixed; top: 0; left: -100%; width: 280px; height: 100%; background: #ffffff; box-shadow: 5px 0 15px rgba(0,0,0,0.1); z-index: 200; transition: 0.3s ease; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        #sidebar.active { left: 0; }
+        .close-btn { align-self: flex-end; font-size: 1.5rem; cursor: pointer; color: #dc3545; font-weight: bold; }
+        .sidebar-item { padding: 15px; background: #f1f3f5; margin-top: 15px; border-radius: 10px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .sidebar-item:active { border-color: #0d6efd; background: #e9ecef; }
+        .sidebar-item .item-title { display: flex; align-items: center; }
+        .cs-text { font-size: 0.75rem; color: #6c757d; font-weight: normal; margin-top: 5px; }
+        #sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
+
+        /* === MAIN MENU === */
+        #main-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 80px 0 60px; text-align: center; overflow-y: auto; background: #f8f9fa; z-index: 50; }
+        
+        .banner-container { width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; display: flex; gap: 15px; padding: 0 15px; margin-bottom: 30px; }
+        .banner-container::-webkit-scrollbar { display: none; }
+        .banner { flex: 0 0 90%; max-width: 400px; height: 150px; border-radius: 12px; scroll-snap-align: center; background-size: cover; background-position: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+        h1.section-title { font-size: 1.5rem; color: #212529; font-weight: 900; margin-bottom: 15px; }
+        .game-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 0 15px; }
+        .game-box { width: 140px; height: 140px; background: #ffffff; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; border: 2px solid #dee2e6; font-size: 0.9rem; font-weight: bold; color: #333; box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+        .game-box:active { border-color: #0d6efd; transform: scale(0.95); }
+        .game-box div:first-child { font-size: 3rem; margin-bottom: 10px; }
+
+        /* === EXCHANGE SHOP === */
+        #exchange-shop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 300; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .exchange-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .exchange-grid { display: flex; flex-direction: column; gap: 15px; padding-bottom: 100px; }
+        .reward-card { background: white; padding: 15px; border-radius: 12px; border: 2px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .reward-card.selected { border-color: #0d6efd; background: #e7f1ff; box-shadow: 0 0 15px rgba(13, 110, 253, 0.3); }
+        .reward-info h3 { margin: 0 0 5px; font-size: 1.1rem; color: #212529; }
+        .reward-info p { margin: 0; font-size: 0.85rem; color: #6c757d; }
+        .reward-cost { font-weight: bold; display: flex; align-items: center; font-size: 1.1rem; }
+
+        /* Floating Button */
+        #floating-confirm { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: #ffc107; padding: 15px 20px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(255, 193, 7, 0.4); transition: 0.4s; z-index: 350; font-weight: bold; border: 2px solid #e0a800; }
+        #floating-confirm.show { bottom: 20px; }
+        .btn-qty { background: #ffffff; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        .btn-buy-confirm { background: #212529; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; flex-grow: 1; margin: 0 15px; font-size: 1rem; }
+
+        /* === LOADING SCREEN === */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; display: none; justify-content: center; align-items: center; z-index: 999999; }
+        .load-text { position: absolute; text-align: center; color: #ffffff; opacity: 0; transition: opacity 1.5s ease-in-out; width: 90%; }
+        #load-step-1 h1 { font-size: 2.2rem; margin: 0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+        #load-step-2 h1 { font-size: 2rem; margin: 0; font-weight: 900; }
+        #load-step-2 p { font-size: 1.1rem; margin-top: 10px; color: #adb5bd; }
+
+        /* === GAME UI === */
+        #game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; background: #212529; z-index: 60; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #1a1d20; color: white; border-bottom: 2px solid #343a40; z-index: 70; }
+        .btn-pause { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 5px; }
+        .game-stats { font-size: 1rem; font-weight: bold; }
+        .game-stats span { color: #0d6efd; font-size: 1.2rem; }
+        canvas { flex: 1; width: 100%; display: block; background: #e9ecef; }
+
+        /* MODALS (Pause, Shop, Death) */
+        .overlay-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 90; backdrop-filter: blur(3px); }
+        .modal-box { background: #161b22; padding: 30px; border-radius: 16px; text-align: center; width: 85%; max-width: 320px; border: 1px solid #30363d; color: white; }
+        .modal-box h2 { margin-top: 0; color: #58a6ff; }
+        .btn-modal { width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn-resume { background: #238636; color: white; }
+        .btn-exit { background: #dc3545; color: white; }
+        .btn-shop-open { background: #e3b341; color: #161b22; margin-top: 15px; width: 100%; }
+
+        /* IN-GAME SHOP */
+        .player-preview { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; background: #21262d; padding: 15px; border-radius: 10px; }
+        .avatar-box { font-size: 3.5rem; margin-bottom: 10px; }
+        .hp-bar-container { width: 100%; height: 15px; background: #444; border-radius: 10px; overflow: hidden; border: 1px solid #000; }
+        .hp-bar-fill { height: 100%; background: #2ea043; transition: width 0.3s; }
+        .shop-item-in-game { display: flex; justify-content: space-between; align-items: center; background: #21262d; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; }
+        .btn-buy-ig { background: #1f6feb; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; }
+        .btn-buy-ig:disabled { background: #444; color: #888; }
+        .close-shop-btn { background: #dc3545; width: 100%; color: white; border: none; padding: 10px; border-radius: 6px; margin-top: 10px; font-weight: bold; }
+        
+        /* Modal Notif Redeem */
+        #redeem-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 500; justify-content: center; align-items: center; }
+        .redeem-box { background: white; padding: 25px; border-radius: 15px; text-align: center; width: 85%; max-width: 350px; }
+        .redeem-code { background: #f8f9fa; border: 2px dashed #0d6efd; font-size: 1.5rem; font-weight: bold; padding: 10px; margin: 15px 0; letter-spacing: 2px; color: #212529; }
+    </style>
+</head>
+<body>
+
+    <!-- TOP NAV -->
+    <div class="top-nav" id="top-nav">
+        <div class="hamburger" onclick="openSidebar()">
+            <div></div><div></div><div></div>
+        </div>
+        <div class="coin-display">
+            <span id="header-gcoins">0</span> <div class="g-coin">G</div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+    <div id="sidebar">
+        <div class="close-btn" onclick="closeSidebar()">✖</div>
+        <h2 style="margin-top: 10px; color: #212529; font-weight: 900;">G-STORE</h2>
+        
+        <div class="sidebar-item" onclick="openExchangeShop()">
+            <div class="item-title">Tukarkan Koin <div class="g-coin" style="margin-left: 10px;">G</div></div>
+        </div>
+        <div class="sidebar-item" onclick="window.open('https://wa.me/6288245340881', '_blank')">
+            <div class="item-title">💬 Kontak CS</div>
+            <div class="cs-text">jika ada kendala dalam game atau apapun</div>
+        </div>
+    </div>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu">
+        <div class="banner-container" id="banner-container">
+            <!-- Banners di-load via JS -->
+        </div>
+
+        <h1 class="section-title">PORTAL GAME</h1>
+        <div class="game-grid">
+            <div class="game-box" onclick="startLoadingSequence('SURVIVAL ALAM LIAR', 'survival')">
+                <div>🏕️</div>
+                <div>Survival 2D</div>
+            </div>
+            <div class="game-box" onclick="startLoadingSequence('CATCH THE BOX', 'casual')">
+                <div>📦</div>
+                <div>Game Fun</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXCHANGE SHOP (TUKAR KOIN) -->
+    <div id="exchange-shop">
+        <div class="exchange-header">
+            <h2 style="margin: 0; color: #0d6efd;">Toko Penukaran</h2>
+            <div class="close-btn" onclick="closeExchangeShop()">✖</div>
+        </div>
+        <div class="coin-display" style="width: fit-content; margin-bottom: 20px;">
+            Saldo: <span id="shop-gcoins" style="margin-left: 10px;">0</span> <div class="g-coin">G</div>
+        </div>
+        <div class="exchange-grid" id="rewards-container">
+            <p style="text-align:center;">Memuat Data Harga...</p>
+        </div>
+    </div>
+
+    <!-- FLOATING YELLOW BUTTON -->
+    <div id="floating-confirm">
+        <button class="btn-qty" onclick="changeQty(-1)">-</button>
+        <button class="btn-buy-confirm" onclick="processExchange()">Beli (<span id="qty-display">1</span>)</button>
+        <button class="btn-qty" onclick="changeQty(1)">+</button>
+    </div>
+
+    <!-- MODAL REDEEM CODE -->
+    <div id="redeem-modal">
+        <div class="redeem-box">
+            <h3 style="margin-top:0; color: #198754;">🎉 Transaksi Berhasil!</h3>
+            <p style="font-size: 0.9rem; color: #6c757d; margin-bottom: 5px;">Ini kode unik lu:</p>
+            <div class="redeem-code" id="generated-code">XXXX-XXXX</div>
+            <p style="font-size: 0.75rem; color: #dc3545; font-weight: bold;">*Kode ini bersifat terbatas.<br>Berlaku 24 Jam & hanya untuk 1x pemakaian.</p>
+            <button class="btn-modal btn-resume" onclick="document.getElementById('redeem-modal').style.display = 'none'">Tutup</button>
+        </div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div id="load-step-1" class="load-text">
+            <h1 id="loading-game-title">SURVIVAL ANIMAL</h1>
+        </div>
+        <div id="load-step-2" class="load-text">
+            <h1>powered by G-STUDIO</h1>
+            <p>sponsor: G-STORE</p>
+        </div>
+    </div>
+
+    <!-- GAME CONTAINER -->
+    <div id="game-container">
+        <div class="game-header">
+            <button class="btn-pause" onclick="pauseGame()">⚙️</button>
+            <div class="game-stats">
+                Poin Game: <span id="ui-points">0</span>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- PAUSE MENU -->
+        <div id="pause-menu" class="overlay-menu">
+            <div class="modal-box">
+                <h2>Game Paused</h2>
+                <button class="btn-modal btn-resume" onclick="resumeGame()">▶ Resume</button>
+                <button id="btn-open-ig-shop" class="btn-modal btn-shop-open" onclick="openSurvivalShop()" style="display: none;">🛒 Upgrade Senjata</button>
+                <button class="btn-modal btn-exit" onclick="exitGame()">Keluar & Cairin Poin (G)</button>
+            </div>
+        </div>
+
+        <!-- SURVIVAL SHOP (UPGRADE SENJATA) -->
+        <div id="survival-shop" class="overlay-menu">
+            <div class="modal-box" style="padding: 20px;">
+                <h2>Toko Survival</h2>
+                <div class="player-preview">
+                    <div class="avatar-box" id="shop-avatar">🧍‍♂️</div>
+                    <div style="width: 100%; display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                        <span>Darah (HP)</span>
+                        <span id="shop-hp-text">100/100</span>
+                    </div>
+                    <div class="hp-bar-container">
+                        <div class="hp-bar-fill" id="shop-hp-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Sistem Upgrade Senjata Terus Menerus -->
+                <div class="shop-item-in-game">
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold; font-size: 1.1rem;" id="ui-weapon-name">Tombak</div>
+                        <div style="font-size: 0.75rem; color: #888;" id="ui-weapon-dmg">Damage: Naik ke 3</div>
+                    </div>
+                    <button class="btn-buy-ig" id="ig-buy-weapon" onclick="buyWeaponUpgrade()">50 Poin</button>
+                </div>
+                
+                <div class="shop-item-in-game">
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold; font-size: 1.1rem;">🥩 Daging</div>
+                        <div style="font-size: 0.75rem; color: #888;">Isi +50 HP</div>
+                    </div>
+                    <button class="btn-buy-ig" id="ig-buy-meat" onclick="buyMeat()">30 Poin</button>
+                </div>
+
+                <button class="close-shop-btn" onclick="closeSurvivalShop()">Tutup Toko</button>
+            </div>
+        </div>
+
+        <!-- DEATH / REVIVE -->
+        <div id="death-menu" class="overlay-menu">
+            <div class="modal-box">
+                <h2 style="color: #dc3545; font-size: 2rem; font-weight: 900;">WASED MATI!</h2>
+                <p>Poin Lu: <span id="death-points" style="font-size: 1.8rem; font-weight:bold; color: #58a6ff;">0</span></p>
+                
+                <button class="btn-modal btn-resume" id="btn-revive" onclick="revivePlayer()">💉 Revive (100 Poin)</button>
+                <button class="btn-modal btn-exit" onclick="exitGame()">💀 Nyerah & Cairin Koin</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // ==========================================
+        // 1. SISTEM KOIN G & DATABASE (1 Poin = 1 Perak)
+        // ==========================================
+        let gCoins = parseInt(localStorage.getItem('gCoins')) || 0;
+        
+        function updateCoinDisplays() {
+            document.getElementById('header-gcoins').innerText = gCoins;
+            document.getElementById('shop-gcoins').innerText = gCoins;
+            localStorage.setItem('gCoins', gCoins);
+        }
+        updateCoinDisplays();
+
+        // Data 1 Poin = 1 Perak
+        let exchangeData = [
+            { id: 1, name: "Voucher Rp 1.000", cost: 1000, desc: "Tukar poin jadi voucher g-store" },
+            { id: 2, name: "Saldo Rp 5.000", cost: 5000, desc: "Tukar poin jadi saldo g-pay" },
+            { id: 3, name: "Saldo Rp 10.000", cost: 10000, desc: "Tukar poin jadi saldo dana/gopay" }
+        ];
+
+        let bannerData = [
+            "https://via.placeholder.com/600x250/161b22/58a6ff?text=G-STORE+PROMO",
+            "https://via.placeholder.com/600x250/0d1117/da3633?text=BOSS+SURVIVAL+UPDATE",
+            "https://via.placeholder.com/600x250/1a1d20/238636?text=KUMPULIN+KOIN+G"
+        ];
+
+        window.onload = () => {
+            // Render Banners
+            let bannerHTML = '';
+            bannerData.forEach(url => {
+                bannerHTML += `<div class="banner" style="background-image: url('${url}')"></div>`;
+            });
+            document.getElementById('banner-container').innerHTML = bannerHTML;
+
+            // Render Rewards
+            renderExchangeShop();
+            startBannerAutoSlide();
+        };
+
+        // Banner Geser Otomatis
+        function startBannerAutoSlide() {
+            let currentIndex = 0;
+            setInterval(() => {
+                let container = document.getElementById('banner-container');
+                let banners = document.querySelectorAll('.banner');
+                if(banners.length > 0 && container.style.display !== 'none') {
+                    currentIndex = (currentIndex + 1) % banners.length;
+                    banners[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }, 3000);
+        }
+
+        // ==========================================
+        // 2. UI HAMBURGER & SHOP PENUKARAN
+        // ==========================================
+        function openSidebar() { document.getElementById('sidebar').classList.add('active'); document.getElementById('sidebar-overlay').style.display = 'block'; }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').style.display = 'none'; }
+
+        function openExchangeShop() {
+            closeSidebar();
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('exchange-shop').style.display = 'flex';
+        }
+        function closeExchangeShop() {
+            document.getElementById('exchange-shop').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+            cancelSelection();
+        }
+
+        let selectedReward = null; let selectedQty = 1;
+
+        function renderExchangeShop() {
+            let html = '';
+            exchangeData.forEach(r => {
+                html += `
+                <div class="reward-card" id="reward-box-${r.id}" onclick="selectReward(${r.id}, ${r.cost})">
+                    <div class="reward-info">
+                        <h3>${r.name}</h3><p>${r.desc}</p>
+                    </div>
+                    <div class="reward-cost">${r.cost} <div class="g-coin">G</div></div>
+                </div>`;
+            });
+            document.getElementById('rewards-container').innerHTML = html;
+        }
+
+        function selectReward(id, cost) {
+            document.querySelectorAll('.reward-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`reward-box-${id}`).classList.add('selected');
+            selectedReward = { id, cost }; selectedQty = 1;
+            updateFloatingButton(); document.getElementById('floating-confirm').classList.add('show');
+        }
+
+        function changeQty(amount) {
+            selectedQty += amount;
+            if (selectedQty <= 0) cancelSelection(); else updateFloatingButton();
+        }
+
+        function cancelSelection() {
+            document.getElementById('floating-confirm').classList.remove('show');
+            document.querySelectorAll('.reward-card').forEach(el => el.classList.remove('selected'));
+            selectedReward = null;
+        }
+
+        function updateFloatingButton() {
+            document.getElementById('qty-display').innerText = selectedQty;
+            document.querySelector('.btn-buy-confirm').innerHTML = `Beli (${selectedQty}) - ${selectedReward.cost * selectedQty} G`;
+        }
+
+        function processExchange() {
+            let totalCost = selectedReward.cost * selectedQty;
+            if(gCoins >= totalCost) {
+                gCoins -= totalCost; updateCoinDisplays();
+                
+                // Generate Kode Acak 8 Karakter
+                let randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+                document.getElementById('generated-code').innerText = randomCode;
+                document.getElementById('redeem-modal').style.display = 'flex';
+                
+                cancelSelection();
+            } else {
+                alert("Koin G lu kurang bre! Kumpulin lagi dari game.");
+            }
+        }
+
+        // ==========================================
+        // 3. LOGIKA LOADING SCREEN
+        // ==========================================
+        function startLoadingSequence(gameName, gameType) {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('top-nav').style.display = 'none';
+            let loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.display = 'flex';
+            
+            let step1 = document.getElementById('load-step-1'); let step2 = document.getElementById('load-step-2');
+            document.getElementById('loading-game-title').innerText = gameName;
+            step1.style.opacity = '0'; step2.style.opacity = '0';
+
+            setTimeout(() => { step1.style.opacity = '1'; }, 500);
+            setTimeout(() => { step1.style.opacity = '0'; }, 3500);
+            setTimeout(() => { step2.style.opacity = '1'; }, 5000);
+            setTimeout(() => { step2.style.opacity = '0'; }, 8000);
+            setTimeout(() => { 
+                loadingScreen.style.display = 'none';
+                initGameEngine(gameType); 
+            }, 9500);
+        }
+
+        // ==========================================
+        // 4. ENGINE GAME 2D UTAMA
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+        let gameLoopId, currentGameType = '', gamePaused = false, gameOver = false, points = 0, frames = 0;
+        
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight - 50; }
+        window.addEventListener('resize', resizeCanvas);
+
+        function updateGameUI() { document.getElementById('ui-points').innerText = points; }
+
+        function pauseGame() {
+            if(gameOver) return;
+            gamePaused = true;
+            document.getElementById('pause-menu').style.display = 'flex';
+            document.getElementById('btn-open-ig-shop').style.display = (currentGameType === 'survival') ? 'block' : 'none';
+        }
+        function resumeGame() { gamePaused = false; document.getElementById('pause-menu').style.display = 'none'; requestAnimationFrame(runGameLoop); }
+
+        function exitGame() {
+            if(points > 0) { gCoins += points; updateCoinDisplays(); alert(`Game beres! Lu bawa pulang ${points} Koin G.`); }
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+            document.getElementById('death-menu').style.display = 'none';
+            document.getElementById('survival-shop').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+            document.getElementById('top-nav').style.display = 'flex';
+        }
+
+        // ==========================================
+        // 5. GAME SURVIVAL - HARDCORE UPDATE
+        // ==========================================
+        let player, enemies, particles, gameSeconds, bossKillCount, showWarningTime;
+        
+        // Data Tier Senjata
+        const weaponTiers = [
+            { name: "Tangan Kosong", icon: "🧍‍♂️", dmg: 2, cost: 0 },
+            { name: "Tombak", icon: "🤺", dmg: 3, cost: 50 },
+            { name: "Kapak", icon: "🪓", dmg: 6, cost: 150 },
+            { name: "Pedang", icon: "🗡️", dmg: 12, cost: 300 },
+            { name: "Senapan", icon: "🔫", dmg: 30, cost: 600 },
+            { name: "Bom", icon: "🧨", dmg: 40, cost: 750 }
+        ];
+        let currentWeaponLvl = 0;
+
+        function initSurvivalGame() {
+            currentGameType = 'survival'; resizeCanvas();
+            points = 0; currentWeaponLvl = 0; gameSeconds = 0; bossKillCount = 0;
+            gameOver = false; gamePaused = false; frames = 0; showWarningTime = 0;
+            particles = []; updateGameUI();
+            player = { x: canvas.width / 2, y: canvas.height - 100, hp: 100, maxHp: 200 };
+            enemies = []; runGameLoop();
+        }
+
+        // Toko Upgrade Senjata
+        function openSurvivalShop() {
+            document.getElementById('pause-menu').style.display = 'none';
+            document.getElementById('survival-shop').style.display = 'flex';
+            
+            let curWeap = weaponTiers[currentWeaponLvl];
+            document.getElementById('shop-avatar').innerText = curWeap.icon;
+            document.getElementById('shop-hp-text').innerText = `${player.hp}/${player.maxHp}`;
+            document.getElementById('shop-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+            
+            let btnWeap = document.getElementById('ig-buy-weapon');
+            if(currentWeaponLvl < weaponTiers.length - 1) {
+                let nextWeap = weaponTiers[currentWeaponLvl + 1];
+                document.getElementById('ui-weapon-name').innerText = `${nextWeap.icon} ${nextWeap.name}`;
+                document.getElementById('ui-weapon-dmg').innerText = `Damage Naik Jadi: ${nextWeap.dmg}`;
+                btnWeap.innerText = `${nextWeap.cost} Poin`;
+                btnWeap.disabled = (points < nextWeap.cost);
+            } else {
+                document.getElementById('ui-weapon-name').innerText = "MAX LEVEL";
+                document.getElementById('ui-weapon-dmg').innerText = "Senjata udah mentok";
+                btnWeap.innerText = "MAX"; btnWeap.disabled = true;
+            }
+            document.getElementById('ig-buy-meat').disabled = (points < 30 || player.hp >= player.maxHp);
+        }
+
+        function closeSurvivalShop() { document.getElementById('survival-shop').style.display = 'none'; document.getElementById('pause-menu').style.display = 'flex'; }
+
+        function buyWeaponUpgrade() {
+            let nextWeap = weaponTiers[currentWeaponLvl + 1];
+            if(points >= nextWeap.cost) {
+                points -= nextWeap.cost; currentWeaponLvl++;
+                updateGameUI(); openSurvivalShop();
+            }
+        }
+        function buyMeat() {
+            if(points >= 30) {
+                points -= 30; player.hp = Math.min(player.maxHp, player.hp + 50);
+                updateGameUI(); openSurvivalShop();
+            }
+        }
+
+        class Enemy {
+            constructor(isBoss = false) {
+                let side = Math.random();
+                if(side < 0.33) { this.x = Math.random() * canvas.width; this.y = -50; } 
+                else if(side < 0.66) { this.x = -50; this.y = Math.random() * canvas.height; } 
+                else { this.x = canvas.width + 50; this.y = Math.random() * canvas.height; } 
+                
+                this.isBoss = isBoss;
+                let difficultyScaling = Math.floor(gameSeconds / 5); // Tiap 5 dtk makin susah
+
+                if (isBoss) {
+                    this.type = '🦍';
+                    this.hp = 20 + (bossKillCount * 15);
+                    this.damage = 25 + (bossKillCount * 5) + (difficultyScaling * 2);
+                    this.speed = 1.0;
+                    this.size = 80;
+                    this.maxHp = this.hp;
+                } else {
+                    this.type = Math.random() > 0.5 ? '🐺' : '🐻';
+                    this.hp = (this.type === '🐻' ? 4 : 2) + Math.floor(difficultyScaling / 2); 
+                    this.damage = (this.type === '🐻' ? 5 : 5) + (difficultyScaling * 2);
+                    this.speed = (this.type === '🐺' ? 1.6 : 0.9) + (difficultyScaling * 0.05);
+                    this.size = 50;
+                    this.maxHp = this.hp;
+                }
+            }
+            update() {
+                let dx = player.x - this.x; let dy = player.y - this.y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+                this.x += (dx / distance) * this.speed; this.y += (dy / distance) * this.speed;
+
+                if(distance < (this.isBoss ? 60 : 40)) {
+                    player.hp -= this.damage;
+                    createBlood(player.x, player.y);
+                    this.hp = 0; // Musuh ilang habis gigit
+                    if(player.hp <= 0) triggerDeath();
+                }
+            }
+            draw() {
+                ctx.font = `${this.size}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(this.type, this.x, this.y);
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x - 20, this.y - (this.size/2 + 10), 40 * (this.hp / this.maxHp), 5);
+            }
+        }
+
+        function triggerDeath() {
+            gameOver = true;
+            document.getElementById('death-menu').style.display = 'flex';
+            document.getElementById('death-points').innerText = points;
+            
+            let btnRevive = document.getElementById('btn-revive');
+            if(points >= 100) {
+                btnRevive.disabled = false; btnRevive.style.opacity = '1'; btnRevive.innerText = "💉 Revive (Bayar 100 Poin)";
+            } else {
+                btnRevive.disabled = true; btnRevive.style.opacity = '0.5'; btnRevive.innerText = "💉 Point Kurang (Butuh 100)";
+            }
+        }
+
+        function revivePlayer() {
+            if(points >= 100) {
+                points -= 100; updateGameUI();
+                player.hp = player.maxHp; enemies = []; gameOver = false;
+                document.getElementById('death-menu').style.display = 'none';
+                requestAnimationFrame(runGameLoop);
+            }
+        }
+
+        // Tap Attack System
+        canvas.addEventListener('pointerdown', (e) => {
+            if(gamePaused || gameOver || currentGameType !== 'survival') return;
+            let tapX = e.clientX - canvas.getBoundingClientRect().left; 
+            let tapY = e.clientY - canvas.getBoundingClientRect().top;
+
+            let curWeap = weaponTiers[currentWeaponLvl];
+
+            for(let i = enemies.length - 1; i >= 0; i--) {
+                let en = enemies[i];
+                let dist = Math.sqrt((tapX - en.x)**2 + (tapY - en.y)**2);
+                let hitRadius = en.isBoss ? 60 : 40;
+                
+                if(dist < hitRadius) {
+                    createBlood(en.x, en.y);
+                    en.hp -= curWeap.dmg;
+                    
+                    if(en.hp <= 0) {
+                        if(en.isBoss) { bossKillCount++; points += 20; } 
+                        else { points += 10; }
+                        updateGameUI();
+                    }
+                    break; 
+                }
+            }
+        });
+
+        class Particle {
+            constructor(x,y) { this.x=x; this.y=y; this.vx=(Math.random()-0.5)*10; this.vy=(Math.random()-0.5)*10; this.life=1.0; }
+            update() { this.x+=this.vx; this.y+=this.vy; this.life-=0.05; }
+            draw() { ctx.globalAlpha=Math.max(0,this.life); ctx.fillStyle='#dc3545'; ctx.fillRect(this.x,this.y,5,5); ctx.globalAlpha=1.0; }
+        }
+        function createBlood(x, y) { for(let i=0; i<15; i++) particles.push(new Particle(x, y)); }
+
+
+        // ==========================================
+        // 6. GAME FUN (CATCH BOX)
+        // ==========================================
+        let catcher, items;
+        function initCasualGame() {
+            currentGameType = 'casual'; resizeCanvas(); points = 0; frames = 0; gameOver = false; gamePaused = false; particles = []; updateGameUI();
+            catcher = { x: canvas.width/2, y: canvas.height - 80 }; items = []; runGameLoop();
+        }
+        canvas.addEventListener('pointerdown', (e) => { if(!gamePaused && !gameOver && currentGameType === 'casual') catcher.x = e.clientX - canvas.getBoundingClientRect().left; });
+        canvas.addEventListener('pointermove', (e) => { if(e.buttons > 0 && !gamePaused && !gameOver && currentGameType === 'casual') catcher.x = e.clientX - canvas.getBoundingClientRect().left; });
+
+
+        // ==========================================
+        // 7. MAIN LOOP RENDER ENGINE
+        // ==========================================
+        function initGameEngine(type) {
+            document.getElementById('game-container').style.display = 'flex';
+            if(type === 'survival') initSurvivalGame(); else initCasualGame();
+        }
+
+        function runGameLoop() {
+            if(gamePaused || gameOver) return;
+            ctx.fillStyle = currentGameType === 'survival' ? '#3d4a1c' : '#87ceeb'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            frames++;
+
+            for(let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(); particles[i].draw();
+                if(particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            if(currentGameType === 'survival') {
+                // Update Detik
+                if(frames % 60 === 0) gameSeconds++;
+
+                // Warning & Boss System (Tiap 10 Detik)
+                if(gameSeconds > 0 && gameSeconds % 10 === 9) showWarningTime = 60; // Nyala peringatan 1 dtk
+                if(showWarningTime > 0) {
+                    showWarningTime--;
+                    ctx.fillStyle = "rgba(255,0,0,0.3)"; ctx.fillRect(0,0, canvas.width, canvas.height); // Layar kedip merah
+                    ctx.fillStyle = "red"; ctx.font = "bold 35px Arial"; ctx.textAlign = "center";
+                    ctx.fillText("⚠️ BOSS DATANG! ⚠️", canvas.width/2, canvas.height/4);
+                }
+                // Spawn Boss pas di detik 10
+                if(gameSeconds > 0 && gameSeconds % 10 === 0 && frames % 60 === 0) {
+                    enemies.push(new Enemy(true));
+                }
+
+                // Spawn Hewan Biasa (Makin cepet seiring waktu)
+                let spawnRate = Math.max(20, 90 - (Math.floor(gameSeconds / 5) * 5)); 
+                if(frames % spawnRate === 0) enemies.push(new Enemy(false));
+                
+                // Gambar Player & Bar Darah
+                ctx.font = "60px Arial"; ctx.fillText(weaponTiers[currentWeaponLvl].icon, player.x, player.y);
+                ctx.fillStyle = "black"; ctx.fillRect(player.x - 40, player.y + 40, 80, 10);
+                ctx.fillStyle = player.hp < 30 ? "red" : "#00ff00"; 
+                ctx.fillRect(player.x - 40, player.y + 40, 80 * (Math.max(0, player.hp) / player.maxHp), 10);
+
+                // Update Musuh
+                for(let i = enemies.length - 1; i >= 0; i--) {
+                    let en = enemies[i]; en.update();
+                    if(en.hp <= 0) enemies.splice(i, 1); else en.draw();
+                }
+            } 
+            else if (currentGameType === 'casual') {
+                if(frames % 40 === 0) items.push({ x: Math.random() * (canvas.width - 40) + 20, y: -30, speed: Math.random() * 3 + 2, type: Math.random() > 0.3 ? '📦' : '💣' });
+                ctx.font = "60px Arial"; ctx.fillText("🧺", catcher.x, catcher.y);
+                for(let i = items.length - 1; i >= 0; i--) {
+                    let it = items[i]; it.y += it.speed;
+                    ctx.font = "40px Arial"; ctx.fillText(it.type, it.x, it.y);
+                    if(Math.sqrt((it.x - catcher.x)**2 + (it.y - catcher.y)**2) < 50) {
+                        if(it.type === '💣') { triggerDeathCasual(); } else { points += 5; updateGameUI(); }
+                        items.splice(i, 1);
+                    } else if (it.y > canvas.height + 30) items.splice(i, 1);
+                }
+            }
+
+            if(!gamePaused && !gameOver) gameLoopId = requestAnimationFrame(runGameLoop);
+        }
+
+        function triggerDeathCasual() {
+            gameOver = true; document.getElementById('death-menu').style.display = 'flex';
+            document.getElementById('death-points').innerText = points; document.getElementById('btn-revive').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+html>
+
+
